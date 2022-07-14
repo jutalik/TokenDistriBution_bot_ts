@@ -1,7 +1,6 @@
 {
   "name": "tokendistribution_bot_ts",
   "version": "1.0.0",
-  
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -27,12 +26,9 @@
     "node-telegram-bot-api": "0.57.0",
     "@types/node": "^18.0.3",
     "typescript": "^4.7.4"
-    
   },
   "devDependencies": {
     "ts-node": "10.8.2",
     "typescript": "4.7.4"
-  },
-  "type": "module"
-
+  }
 }
