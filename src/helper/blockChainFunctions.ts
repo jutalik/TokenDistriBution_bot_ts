@@ -86,3 +86,12 @@ export const getTotalBalance = async ():Promise<number[]> => {
     return [klayBalance / 1000000000000000000, perBalance / 1000000000000000000];
   };
 
+
+// 
+  export const _perTransfer = async (_fromAddress, _fromPrivKey, _toAddress, _ea) => {
+
+  }
+  
+  export const _klayTransfer = async (_fromAddress, _fromPrivKey, _toAddress, _ea) => {
+
+  }

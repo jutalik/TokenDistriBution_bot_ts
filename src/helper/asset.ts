@@ -1,4 +1,6 @@
-export const tokenAbi:any = [
+import {Contract,EventData, AbiItem} from 'caver-js'
+
+export const tokenAbi:AbiItem[] = [
     {
         "constant": true,
         "inputs": [],
@@ -426,7 +428,7 @@ export const tokenAbi:any = [
     }
 ]
 
-export const IKlaySwapABI:any = [
+export const IKlaySwapABI:AbiItem[] = [
     {
         inputs: [
             {
@@ -509,7 +511,7 @@ export const IKlaySwapABI:any = [
     },
 ];
 
-export const ILpABI:any = [
+export const ILpABI:AbiItem[] = [
 
     {
         inputs: [
