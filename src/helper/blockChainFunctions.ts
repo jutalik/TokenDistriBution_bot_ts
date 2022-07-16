@@ -96,17 +96,66 @@ export const getTotalBalance = async ():Promise<number[]> => {
 
 
 export const _perTransfer = async (TxInfo:_TransferInfo) => {
-    console.log(TxInfo.from_address)
-    console.log(TxInfo.from_privKey)
-    console.log(TxInfo.toAddress)
-    console.log(TxInfo.sendValue)
+    const account = caver.klay.accounts.createWithAccountKey(
+        TxInfo.from_address,
+        TxInfo.from_privKey,
+    );
+    console.log('okay1')
+
+    let _input = PER.methods
+        .transfer(TxInfo.toAddress, `${caver.utils.convertToPeb(String(TxInfo.sendValue), "KLAY")}`).encodeABI();
+    console.log('okay2')
+
+
+    let spender = await caver.wallet.getKeyring(TxInfo.from_address);
+    if (spender == undefined) {
+        try {
+            spender = caver.wallet.newKeyring(TxInfo.from_address, TxInfo.from_privKey);
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+
+    let tokenTransferTx = new caver.transaction.smartContractExecution(
+        {
+            from: account.address,
+            to: perAddress,
+            input: _input,
+            gas: 90000,
+        },
+    );
+    console.log('okay4')
+    try {
+        await caver.wallet.sign(TxInfo.from_address, tokenTransferTx);
+        const receipt = await caver.rpc.klay.sendRawTransaction(
+            tokenTransferTx.getRLPEncoding(),
+        );
+        const TX_HASH = receipt.transactionHash;
+        caver.wallet.remove(account.address);
+        console.log(`PER 전송 : ${TX_HASH}`)
+    } catch (err) {
+        console.log(err);
+    }
   }
 
 export const _klayTransfer = async (TxInfo:_TransferInfo) => {
-    console.log(TxInfo.from_address)
-    console.log(TxInfo.from_privKey)
-    console.log(TxInfo.toAddress)
-    console.log(TxInfo.sendValue)
+    let account = caver.klay.accounts.createWithAccountKey(TxInfo.from_address, TxInfo.from_privKey)
+    caver.klay.accounts.wallet.add(account)
+    const _SendEA = caver.utils.convertToPeb('1', 'KLAY')
+
+    const valueTransferTx = {
+        type: 'VALUE_TRANSFER',
+        from: TxInfo.from_address,
+        to: TxInfo.toAddress,
+        value: _SendEA,
+        gas: 25000,
+    }
+
+    const valueTxReceipt = await caver.klay.sendTransaction(valueTransferTx)
+    console.log(`KLAY 전송 : ${valueTxReceipt.transactionHash}`)
+    console.log('=============================')
+    caver.wallet.remove(account.address);
   }
 
 export const writeFile = async (walletStruct:Wallet, _pathNumb:number):Promise<void> => {
@@ -115,6 +164,16 @@ export const writeFile = async (walletStruct:Wallet, _pathNumb:number):Promise<v
     fs.writeFileSync(`./createdWallet/${_pathNumb}.json`, JSON.stringify(walletStruct))
 }
 
+const getInfo = async() => {
+    let _count = () => fs.readdirSync("./wallets").length;
+    const decimalRandom = () => String(Math.random())
+    const balanceRandom = () => String(Math.floor(Math.random() * (6000 - 4000) + 4000))
+    
+    let randomWalletNumber = () => Math.floor(Math.random() * (266 - 0) + 0)
+    let transferRandom = balanceRandom()
+    let _decimalRandom = decimalRandom()
+    let walletIndex = randomWalletNumber()
+}
 
 export const runDistribute = (min:number,max:number) => {
 
@@ -146,7 +205,7 @@ export const runDistribute = (min:number,max:number) => {
             // function - 랜덤으로 인덱스, 랜덤으로 수량, 랜덤으로 뽑힌 인덱스의 월렛 밸런스가 랜덤수량 이상인지 체크하는 로직 추가
             // if 랜덤으로 뽑힌 월렛밸런스가 밸런스가 부족하다면 다시 재차 랜덤으로 인덱스 뽑기 - (randomValue < 보유Value) == true
 
-
+            let transferInfo = await getInfo()
             // //전송 로직
             // await _perTransfer(transferInfo)
             // await _klayTransfer(transferInfo)
