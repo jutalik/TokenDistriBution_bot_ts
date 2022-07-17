@@ -9,11 +9,11 @@ const PER = new caver.klay.Contract(tokenAbi, perAddress);
 
 // interface createdWallet {
 //     address: string
-//     priv: string    
+//     priv: string
 // }
 
 /**
- * @title _TransferInfo 
+ * @title _TransferInfo
  * @description transfer TX를 실행시키기 위한 정보들
  */
 interface _TransferInfo {
@@ -21,7 +21,7 @@ interface _TransferInfo {
     from_privKey: string
     toAddress: string
     sendValue: string
-}  
+}
 
 /**
  * @description json에 저장할 월렛 클래스형식
@@ -63,15 +63,10 @@ export const createWallet = (_path:number):string[] => {
 export const updateWallet = async ():Promise<boolean> => {
     let count:number = fs.readdirSync('./wallets').length;
     for (let i = 0; i < count; i++) {
-        try{ 
-            let file = JSON.parse(fs.readFileSync(`./wallets/${i}.json`, "utf8"));
-            await PER.methods.balanceOf(file.address).call().then((res:any)=>{
-                file.perBalance = res
-            })
-            await caver.rpc.klay.getBalance(file.address).then((res:any)=>{
-                res = caver.utils.hexToNumberString(res)
-                file.klayBalance = res
-            })           
+        try{
+            const file = JSON.parse(fs.readFileSync(`./wallets/${i}.json`, "utf8"));
+            file.perBalance = await PER.methods.balanceOf(file.address).call();
+            file.klayBalance = caver.utils.hexToNumberString(await caver.rpc.klay.getBalance(file.address));
             fs.writeFileSync(`./wallets/${i}.json`, JSON.stringify(file));
         } catch(e){
             console.log(e)
@@ -85,7 +80,7 @@ export const getTotalBalance = async ():Promise<number[]> => {
     let count = fs.readdirSync("./wallets").length;
     let klayBalance = 0;
     let perBalance = 0;
-  
+
     for (let i = 0; i < count; i++) {
       let file = JSON.parse(fs.readFileSync(`./wallets/${i}.json`, "utf8"));
       klayBalance += Number(file.klayBalance);
@@ -168,7 +163,7 @@ const getInfo = async() => {
     let _count = () => fs.readdirSync("./wallets").length;
     const decimalRandom = () => String(Math.random())
     const balanceRandom = () => String(Math.floor(Math.random() * (6000 - 4000) + 4000))
-    
+
     let randomWalletNumber = () => Math.floor(Math.random() * (266 - 0) + 0)
     let transferRandom = balanceRandom()
     let _decimalRandom = decimalRandom()
@@ -178,8 +173,8 @@ const getInfo = async() => {
 export const runDistribute = (min:number,max:number) => {
 
     // 랜덤시간 생성하고 인터벌 도는 함수
-    function randomInterval(callback:any, min:number, max:number) {
-        let timeout:any;
+    function randomInterval(callback:(stop: ()=>void)=>Promise<void>, min:number, max:number) {
+        let timeout:NodeJS.Timeout;
         const randomNum = (max:number, min:number = 0) => Math.random() * (max - min) + min;
         const stop = () => clearTimeout(timeout)
         const tick = () => {
@@ -190,18 +185,18 @@ export const runDistribute = (min:number,max:number) => {
                 tick();
                 callback && typeof callback === "function" && callback(stop);
             }, time)
-        }    
+        }
         tick();
-    }  
+    }
 
 
     // 실행함수
-    randomInterval(async (stop:any) => {
-        
+    randomInterval(async (stop:()=>void) => {
+
         // 0시 ~ 5시는 실행안됨
         if (new Date().getHours() > 5) {
 
-            // 
+            //
             // function - 랜덤으로 인덱스, 랜덤으로 수량, 랜덤으로 뽑힌 인덱스의 월렛 밸런스가 랜덤수량 이상인지 체크하는 로직 추가
             // if 랜덤으로 뽑힌 월렛밸런스가 밸런스가 부족하다면 다시 재차 랜덤으로 인덱스 뽑기 - (randomValue < 보유Value) == true
 
@@ -209,13 +204,13 @@ export const runDistribute = (min:number,max:number) => {
             // //전송 로직
             // await _perTransfer(transferInfo)
             // await _klayTransfer(transferInfo)
-    
-    
+
+
         } else {
             console.log('revert 현재시간')
         }
-    
-    }, min*(1000), max*(1000)) 
-    // }, min*(1000*60), max*(1000*60)) 
+
+    }, min*(1000), max*(1000))
+    // }, min*(1000*60), max*(1000*60))
 }
 
