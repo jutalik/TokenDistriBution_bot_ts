@@ -20,7 +20,7 @@
   "homepage": "https://github.com/jutalik/TokenDistriBution_bot_ts#readme",
   "dependencies": {
     "@types/node": "^18.0.3",
-    "caver-js": "1.8.0",
+    "caver-js": "1.8.2",
     "dotenv": "16.0.1",
     "ethers": "^5.6.9",
     "fs": "0.0.1-security",
