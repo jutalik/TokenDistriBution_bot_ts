@@ -54,7 +54,7 @@ class Wallet {
  * @param _path 월렛생성 패스설정값
  * @return [어드레스,프라이빗키] 스트링 반환
  */
-export const createWallet = (_path:number):string[] => {
+export const createWallet = async (_path:number):Promise<string[]> => {
     let wallet = ethers.Wallet.fromMnemonic(`${process.env.MNEMONIC_WORD}`,`m/44'/60'/0'/0/${_path}`)
     return [wallet.address, wallet.privateKey]
 }
@@ -86,7 +86,7 @@ export const getTotalBalance = async ():Promise<number[]> => {
       klayBalance += Number(file.klayBalance);
       perBalance += Number(file.perBalance);
     }
-    return [klayBalance / 1000000000000000000, perBalance / 1000000000000000000];
+    return [klayBalance / (1*10**18), perBalance / (1*10**18)];
   };
 
 
@@ -136,24 +136,41 @@ export const _klayTransfer = async (TxInfo:_TransferInfo) => {
   }
 
 export const writeFile = async (walletStruct:Wallet, _pathNumb:number):Promise<void> => {
-    // 이동해야함
     fs.writeFileSync(`./wallets/${_pathNumb}.json`, JSON.stringify(walletStruct))
     fs.writeFileSync(`./createdWallet/${_pathNumb}.json`, JSON.stringify(walletStruct))
 }
 
-const getInfo = async() => {
-    let _count = () => fs.readdirSync("./wallets").length;
+// 간혹 보내는 월렛이 밸런스가 부족한 경우가 있음,
+// 그렇기 때문에 밸런스 체크까지 하고 조건에 부합하는 랜덤월렛을 리턴
+const checkRandomWallet = async():Promise<_TransferInfo> => {
     const decimalRandom = () => String(Math.random())
     const balanceRandom = () => String(Math.floor(Math.random() * (6000 - 4000) + 4000))
+    const randomWalletNumber = () => Math.floor(Math.random() * (266 - 0) + 0)
 
-    let randomWalletNumber = () => Math.floor(Math.random() * (266 - 0) + 0)
-    let transferRandom = balanceRandom()
-    let _decimalRandom = decimalRandom()
-    let walletIndex = randomWalletNumber()
+    let returnAddr:string;
+    let returnPriv:string;
+    let returnPer_val:string;
+    let returnKlay_val:string;
+    let tx_value = balanceRandom() + decimalRandom()    
+    do{
+        const from = JSON.parse(fs.readFileSync(`./wallets/${randomWalletNumber()}.json`, "utf8"));
+        returnAddr = from.address
+        returnPriv = from.privKey
+        returnKlay_val = await caver.rpc.klay.getBalance(from.address)
+        returnPer_val =  await PER.methods.balanceOf(from.address).call()
+    }while( Number(returnKlay_val) < 2*10**18 ||( Number(returnPer_val) + 40000*10**18 )< Number(tx_value))
+
+    const returnInfo:_TransferInfo = {
+        from_address: returnAddr,
+        from_privKey: returnPriv,
+        toAddress: '',
+        sendValue: tx_value
+    }
+
+    return returnInfo
 }
 
 export const runDistribute = (min:number,max:number) => {
-
     // 랜덤시간 생성하고 인터벌 도는 함수
     function randomInterval(callback:(stop: ()=>void)=>Promise<void>, min:number, max:number) {
         let timeout:NodeJS.Timeout;
@@ -171,28 +188,31 @@ export const runDistribute = (min:number,max:number) => {
         tick();
     }
 
-
     // 실행함수
     randomInterval(async (stop:()=>void) => {
 
         // 0시 ~ 5시는 실행안됨
         if (new Date().getHours() > 5) {
-
+            let count = fs.readdirSync("./wallets").length;
             //
             // function - 랜덤으로 인덱스, 랜덤으로 수량, 랜덤으로 뽑힌 인덱스의 월렛 밸런스가 랜덤수량 이상인지 체크하는 로직 추가
             // if 랜덤으로 뽑힌 월렛밸런스가 밸런스가 부족하다면 다시 재차 랜덤으로 인덱스 뽑기 - (randomValue < 보유Value) == true
+            const transferInfo = await checkRandomWallet();
+            const [_addr, _privKey] = await createWallet(count);
+            transferInfo.toAddress = _addr;
 
-            let transferInfo = await getInfo()
+            // 새월렛 생성하고 파일쓰기
+            const createdWallet:Wallet = new Wallet(`배포월렛${count}`,_addr,_privKey,'','',count) 
+            writeFile(createdWallet,count);
+
+
             // //전송 로직
-            // await _perTransfer(transferInfo)
-            // await _klayTransfer(transferInfo)
-
-
+            await _perTransfer(transferInfo)
+            await _klayTransfer(transferInfo)
+            
         } else {
             console.log('revert 현재시간')
         }
-
-    }, min*(1000), max*(1000))
-    // }, min*(1000*60), max*(1000*60))
+    }, min*(1000*60), max*(1000*60))
 }
 

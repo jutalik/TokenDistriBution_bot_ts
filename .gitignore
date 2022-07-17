@@ -1,3 +1,4 @@
 node_modules
 .env
 src/wallets/*
+src/createdWallet/*
