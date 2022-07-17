@@ -1,4 +1,4 @@
-import Caver from 'caver-js'
+import Caver, {DeprecatedTransactionObject} from 'caver-js'
 import {ethers} from 'ethers'
 import fs from 'fs'
 import {lpAddress,perAddress,ILpABI,IKlaySwapABI,tokenAbi,klaySwapFactoryAddress } from './asset'
@@ -91,47 +91,29 @@ export const getTotalBalance = async ():Promise<number[]> => {
 
 
 export const _perTransfer = async (TxInfo:_TransferInfo) => {
-    const account = caver.klay.accounts.createWithAccountKey(
-        TxInfo.from_address,
-        TxInfo.from_privKey,
-    );
+    const {from_privKey, from_address, sendValue, toAddress} = TxInfo;
+
+    const account = caver.klay.accounts.createWithAccountKey(from_address, from_privKey);
     console.log('okay1')
 
-    let _input = PER.methods
-        .transfer(TxInfo.toAddress, `${caver.utils.convertToPeb(String(TxInfo.sendValue), "KLAY")}`).encodeABI();
+    const _input = PER.methods
+        .transfer(toAddress, `${caver.utils.convertToPeb(String(sendValue), "KLAY")}`).encodeABI();
     console.log('okay2')
 
-
-    let spender = await caver.wallet.getKeyring(TxInfo.from_address);
-    if (spender == undefined) {
-        try {
-            spender = caver.wallet.newKeyring(TxInfo.from_address, TxInfo.from_privKey);
-        } catch (err) {
-            console.log(err);
-        }
-    }
-
-
-    let tokenTransferTx = new caver.transaction.smartContractExecution(
+    const { rawTransaction } = await caver.klay.accounts.signTransaction(
         {
             from: account.address,
             to: perAddress,
-            input: _input,
-            gas: 90000,
+            data: _input,
+            gas: 3000000,
         },
+        from_privKey,
     );
-    console.log('okay4')
-    try {
-        await caver.wallet.sign(TxInfo.from_address, tokenTransferTx);
-        const receipt = await caver.rpc.klay.sendRawTransaction(
-            tokenTransferTx.getRLPEncoding(),
-        );
-        const TX_HASH = receipt.transactionHash;
-        caver.wallet.remove(account.address);
-        console.log(`PER 전송 : ${TX_HASH}`)
-    } catch (err) {
-        console.log(err);
-    }
+
+    if (!rawTransaction) throw 'require rawTransaction';
+
+    const receipt = await caver.klay.sendSignedTransaction(rawTransaction);
+    console.log(`PER 전송 : ${receipt.transactionHash}`)
   }
 
 export const _klayTransfer = async (TxInfo:_TransferInfo) => {
