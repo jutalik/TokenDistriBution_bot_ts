@@ -54,7 +54,7 @@ class Wallet {
  * @param _path 월렛생성 패스설정값
  * @return [어드레스,프라이빗키] 스트링 반환
  */
-export const createWallet = async (_path:number):Promise<string[]> => {
+const createWallet = async (_path:number):Promise<string[]> => {
     let wallet = ethers.Wallet.fromMnemonic(`${process.env.MNEMONIC_WORD}`,`m/44'/60'/0'/0/${_path}`)
     return [wallet.address, wallet.privateKey]
 }
@@ -90,7 +90,7 @@ export const getTotalBalance = async ():Promise<number[]> => {
   };
 
 
-export const _perTransfer = async (TxInfo:_TransferInfo) => {
+const _perTransfer = async (TxInfo:_TransferInfo) => {
     const {from_privKey, from_address, sendValue, toAddress} = TxInfo;
 
     const account = caver.klay.accounts.createWithAccountKey(from_address, from_privKey);
@@ -116,7 +116,7 @@ export const _perTransfer = async (TxInfo:_TransferInfo) => {
     console.log(`PER 전송 : ${receipt.transactionHash}`)
   }
 
-export const _klayTransfer = async (TxInfo:_TransferInfo) => {
+const _klayTransfer = async (TxInfo:_TransferInfo) => {
     let account = caver.klay.accounts.createWithAccountKey(TxInfo.from_address, TxInfo.from_privKey)
     caver.klay.accounts.wallet.add(account)
     const _SendEA = caver.utils.convertToPeb('1', 'KLAY')
@@ -135,7 +135,7 @@ export const _klayTransfer = async (TxInfo:_TransferInfo) => {
     caver.wallet.remove(account.address);
   }
 
-export const writeFile = async (walletStruct:Wallet, _pathNumb:number):Promise<void> => {
+const writeFile = async (walletStruct:Wallet, _pathNumb:number):Promise<void> => {
     fs.writeFileSync(`./wallets/${_pathNumb}.json`, JSON.stringify(walletStruct))
     fs.writeFileSync(`./createdWallet/${_pathNumb}.json`, JSON.stringify(walletStruct))
 }
