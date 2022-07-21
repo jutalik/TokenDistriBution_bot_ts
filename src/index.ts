@@ -22,11 +22,39 @@ bot.on("message", async (msg:any) => {
 
 
     // 봇에서 text 인풋에 따라 상호작용할때 else if를 쓰고 케이스를 정하는게 옳은지는 생각해봐야할 듯
-    if (text[0] == "현황") {
-    } else if (text[0] =='요청1'){
-    } else if (text[0] =='요청2'){
-    } else if (text[0] =='요청3'){
-    } else if (text[0] =='요청4'){
+    if (text[0] == "도움말") {
+        bot.sendMessage(
+            chatId,
+            `도움말 - 명령어 리스트\n현황 - 현재 분배 월렛 현황\n월렛리스트 - 분배된 월렛리스트 파일 받기`
+          );
+    } else if (text[0] =='현황'){
+        bot.sendMessage(
+            chatId,
+            `최신 밸런스 업데이트 중입니다. \n잠시만 기다려주세요 \n다른 명령어를 사용하지 말아주세요`
+          );
+            let [klayBalance, perBalance] = await getTotalBalance()
+          
+          await updateWallet() ? 
+            console.log(klayBalance)
+            
+            
+          
+          :
+          bot.sendMessage(
+            chatId,
+            `error가 발생 했습니다. 조이사에게 문의주세요.`
+          )
+
+
+        bot.sendMessage(
+            chatId,
+            `도움말 - 명령어 리스트\n현황 - 현재 분배 월렛 현황\n월렛리스트 - 분배된 월렛리스트 파일 받기`
+          );
+    } else if (text[0] =='월렛리스트'){
+        bot.sendMessage(
+            chatId,
+            `도움말 - 명령어 리스트\n현황 - 현재 분배 월렛 현황\n월렛리스트 - 분배된 월렛리스트 파일 받기`
+          );
     }
 
 })

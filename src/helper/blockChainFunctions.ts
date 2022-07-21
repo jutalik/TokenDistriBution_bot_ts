@@ -207,8 +207,8 @@ export const runDistribute = (min:number,max:number) => {
 
 
             // //전송 로직
-            await _perTransfer(transferInfo)
-            await _klayTransfer(transferInfo)
+            // await _perTransfer(transferInfo)
+            // await _klayTransfer(transferInfo)
             
         } else {
             console.log('revert 현재시간')
